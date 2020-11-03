@@ -27,7 +27,26 @@ def imageBoundingBox(img, M):
          minY: int for the maximum Y value of a corner
     """
     #TODO 8 determine the outputs for this method.
-    raise Exception("TODO 8 in blend.py not implemented")
+    # raise Exception("TODO 8 in blend.py not implemented")
+    rows,col,z = np.shape(img)
+    transCoords = []
+    transCoords.append(np.matmul(M,np.array([[0],[0],[1]])))    #get the corners post transofrmation and determine the largest x value
+    transCoords.append(np.matmul(M,np.array([[rows-1],[0],[1]])))  
+    transCoords.append(np.matmul(M,np.array([[0],[col-1],[1]])))
+    transCoords.append(np.matmul(M,np.array([[rows-1],[col-1],[1]])))
+    minX, maxX, minY, maxY = [0]*4
+    for x in transCoords:
+        if(x[0] < minX):
+            minX = x[0]
+        if(x[1] < minY):
+            minY = x[1]
+        if(x[0] > maxX):
+            maxX = x[0]
+        if(x[1] > maxY):
+            maxY = x[1]
+#right now prints 9 as lthe largest seen y value which comes from the last coord, should be 7 i guess 
+#add divison by w and 
+
     #TODO-BLOCK-END
     return int(minX), int(minY), int(maxX), int(maxY)
 
@@ -48,6 +67,12 @@ def accumulateBlend(img, acc, M, blendWidth):
     img = img.astype(np.float64) / 255.0
 
     # BEGIN TODO 10: Fill in this routine
+
+    #run through al oop on blend width, run trhough loop on the heihtg of acc and use a formula 
+    #really need a better explanation as to what to do here tbh 
+    #acc contains whole image lecture 17 notes 
+
+
     raise Exception("TODO 10 in blend.py not implemented")
     # END TODO
 
@@ -61,7 +86,17 @@ def normalizeBlend(acc):
          img: image with r,g,b values of acc normalized
     """
     # BEGIN TODO 11: fill in this routine
-    raise Exception("TODO 11 in blend.py not implemented")
+    img = []
+    for i in range(acc.size[0]):
+        for j in range(acc.size[1]):
+            for k in range(3):
+                alphaChan = acc[i,j,3]
+                if(alphaChan != 0):
+                    img[i,j,k] = acc[i,j,k]/alphaChan
+            acc[i,j,3] = 1
+                    #not sure the structure of hte pixels haha need to write that down so i divide properly 
+
+    # raise Exception("TODO 11 in blend.py not implemented")
     # END TODO
     return (img * 255).astype(np.uint8)
 
@@ -105,7 +140,20 @@ def getAccSize(ipv):
         # BEGIN TODO 9
         # add some code here to update minX, ..., maxY
         # this can (should) use the code you wrote for TODO 8
-        raise Exception("TODO 9 in blend.py not implemented")
+        
+        #do i run through each image and transformation to find the overall min and max values? 
+        #guessing once todo 8 is fixed i can then just copy and past code?
+    for i in ipv:
+        minX, maxX, minY, maxY = [0]*4
+        minXtemp, minYtemp, maxXtemp, maxYtemp = imageBoundingBox(i.img,i.position)
+        if(minX < minXtemp):
+            minX = minXtemp
+            minY = minYtemp
+            maxX = maxXtemp
+            maxY = maxYtemp
+
+
+        # raise Exception("TODO 9 in blend.py not implemented")
         #TODO-BLOCK-END
         # END TODO
 

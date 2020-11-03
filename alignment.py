@@ -26,10 +26,21 @@ def computeHomography(f1, f2, matches, A_out=None):
         matches, and estimates a homography from image 1 to image 2 from the matches.
     '''
     #BEGIN TODO 2
+
+    A = [] 
+    for match in matches:   #runs trhough all the matches and construcst the A matrix
+        img1_cords = match.queryIdx
+        img2_cords = match.trainIdx
+        (x1,y1) = f1[img1_cords].pt
+        (x2,y2) = f2[img2_cords].pt
+
+        A.append([x1,y1,1,0,0,0,-x2*x1,-x2*y1,-x2])   #formula to create the A matrix based on the two points in matches
+        A.append([0,0,0,x1,y1,1,-y2*x1,-y2*y1,-y2])
+
     # Construct the A matrix that will be used to compute the homography
     # based on the given set of matches among feature sets f1 and f2.
 
-    raise Exception("TODO 2 in alignment.py not implemented")
+    # raise Exception("TODO 2 in alignment.py not implemented")
 
     #END TODO
 
@@ -40,11 +51,15 @@ def computeHomography(f1, f2, matches, A_out=None):
 
 
     H = np.eye(3) # create the homography matrix
-
+    z = 0
     #BEGIN TODO 3
     #Fill the homography H with the correct values
+    for i in range(3):   #fills in matrix with the valuse given by minimizeAx
+        for j in range(3):
+          H[i,j] = x[z]
+          z+=1
 
-    raise Exception("TODO 3 in alignment.py not implemented")
+    # raise Exception("TODO 3 in alignment.py not implemented")
 
     #END TODO
 
@@ -90,7 +105,39 @@ def alignPair(f1, f2, matches, m, nRANSAC, RANSACthresh):
     #Your homography handling code should call computeHomography.
     #This function should also call getInliers and, at the end,
     #least_squares_fit.
-    raise Exception("TODO 4 in alignment.py not implemented")
+    
+    bestInlierCount = -1
+
+    #not sure how to add in homogrphy transformation portion 
+    
+    for i in range(nRANSAC):     #based on k value
+        di = []
+        if(m == "eTranslate"):   #determines wether to do a line or homogrophy 
+            s = 1
+            match = (random.choice(matches))
+            (x1,y1) = f1[match.queryIdx].pt
+            (x2,y2) = f1[match.trainIdx].pt
+            x = x2-x1
+            y = y2-y1
+            tempM = np.array([[0,0,x][0,0,y][0,0,1]])
+        else:
+            s = 4
+            for j in range(s):    # runs a random set of datapoints from matches based on S
+              di.append(random.choice(matches))
+            tempM = computeHomography(f1,f2,di,A_out=None)
+
+        
+        # not sure the usage of homgrophy funciton in it
+        #fit model code goes here
+          #either compute homogrophy or translation matrix asthe model
+
+        inliers = getInliers(f1,f2,matches,tempM,RANSACthresh)  #gets inliers
+        if(len(inliers) > bestInlierCount):      #checks for best inlier count so far
+            bestInlierCount = len(inliers)
+            M = tempM
+            bestInliers = inliers
+            #after finding the best model you can then use the best inliers to fit a final model  as a best step thing 
+            # raise Exception("TODO 4 in alignment.py not implemented")
     #END TODO
     return M
 
@@ -115,7 +162,7 @@ def getInliers(f1, f2, matches, M, RANSACthresh):
         in f2.
         Return the array of the match indices of these features.
     '''
-
+   
     inlier_indices = []
 
     for i in range(len(matches)):
@@ -124,7 +171,16 @@ def getInliers(f1, f2, matches, M, RANSACthresh):
         # transformed by M, is within RANSACthresh of its match in f2.
         # If so, append i to inliers
         #TODO-BLOCK-BEGIN
-        raise Exception("TODO 5 in alignment.py not implemented")
+        pt1 = np.array([[f1[matches[i].queryIdx].pt[0]] , [f1[matches[i].queryIdx].pt[1]] ,[1]])
+        pt2 = np.array([[f2[matches[i].trainIdx].pt[0]] , [f2[matches[i].trainIdx].pt[1]] ,[1]])
+        #add in division by w
+        dist = np.linalg.norm(np.subtract(np.matmul(M,pt1) ,pt2))
+        if(np.linalg.norm(np.subtract(np.matmul(M,pt1) ,pt2)) < RANSACthresh):
+            inlier_indices.append(i)   #should i  be appending the x,y values to inlier indices? 
+
+# still recieving erros not sure where my math is wrong on this one 
+
+        # raise Exception("TODO 5 in alignment.py not implemented")
         #TODO-BLOCK-END
         #END TODO
 
@@ -163,22 +219,47 @@ def leastSquaresFit(f1, f2, matches, m, inlier_indices):
 
         u = 0.0
         v = 0.0
+        for i in inlier_indices:
+
+            (x1,y1) = f1[matches[i].queryIdx].pt
+            (x2,y2) = f2[matches[i].trainIdx].pt
+
+            x = x2-x1
+            y = y2-y1
+            u+=x
+            v+=y    
+        avgXval = u/len(inlier_indices)
+        avgYval = v/len(inlier_indices)
+
+        M = np.array([[0,0,avgXval][0,0,avgYval][0,0,1]])
+        #cvheck with a print statment 
+
+        #not sure if my formula is right here 
 
         #BEGIN TODO 6 :Compute the average translation vector over all inliers.
         # Fill in the appropriate entries of M to represent the average
         # translation transformation.
-        raise Exception("TODO 6 in alignment.py not implemented")
+        # raise Exception("TODO 6 in alignment.py not implemented")
         #END TODO
 
     elif m == eHomography:
         #BEGIN TODO 7
         #Compute a homography M using all inliers. This should call
         # computeHomography.
-        raise Exception("TODO 7 in alignment.py not implemented")
+        totalmatches = []
+        for i in inlier_indices:
+            totalmatches.append(matches[i]) 
+
+        M = computeHomography(f1,f2,totalmatches,A_out=None)
+
+        # i believe that homogrophy is being performed properly 
+
+
+        # raise Exception("TODO 7 in alignment.py not implemented")
         #END TODO
 
     else:
         raise Exception("Error: Invalid motion model.")
 
     return M
-
+#bi linear interpolation (remap)
