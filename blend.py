@@ -143,13 +143,16 @@ def getAccSize(ipv):
         
         #do i run through each image and transformation to find the overall min and max values? 
         #guessing once todo 8 is fixed i can then just copy and past code?
+    minX, maxX, minY, maxY = [0]*4
     for i in ipv:
-        minX, maxX, minY, maxY = [0]*4
         minXtemp, minYtemp, maxXtemp, maxYtemp = imageBoundingBox(i.img,i.position)
-        if(minX < minXtemp):
+        if(minX > minXtemp):
             minX = minXtemp
+        if(minY >minYtemp):
             minY = minYtemp
+        if(maxX < maxXtemp):
             maxX = maxXtemp
+        if(maxY < maxYtemp):
             maxY = maxYtemp
 
 
