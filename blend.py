@@ -72,8 +72,37 @@ def accumulateBlend(img, acc, M, blendWidth):
     #really need a better explanation as to what to do here tbh 
     #acc contains whole image lecture 17 notes 
 
+    # for x in range(acc.size[0]):
+    #     for y in range(acc.size[1]):
+    #         vect = np.matmul(M_t,np.array([[0,0,x],[0,0,y],[0,0,1]]))
+    #         acc[]
 
-    raise Exception("TODO 10 in blend.py not implemented")
+    # height, width = acc.shape[:2]
+    # y, x = np.indices((height, width), dtype = np.float64)
+    # linearized = np.array([x.ravel(), y.ravel, np.ones_like(x).ravel()])    #linearized indecies
+
+    # warped_indecies= M.dot(linearized)
+    # xtemp = warped_indecies[0]/warped_indecies[-1]
+    # ytemp = warped_indecies[1]/warped_indecies[-1]
+    # xtemp = xtemp.reshape(height,width).astype(np.float64)
+    # ytemp = ytemp.reshape(height,width).astype(np.float64)
+
+    # dst = cv2.remap(img,xtemp,ytemp,cv2.INTER_LINEAR)
+
+
+    inverseM = np.linalg.inv(M)
+    for y in acc.size[0]:
+        for x in acc.size[1]:
+            vect = np.matmul(inverseM,np.array([[0,0,y],[0,0,x],[0,0,1]]))
+            ix = vect[2][1]
+            iy = vect[2][0]
+            acc[y,x,:] += cv2.remap(img,ix,iy,cv2.INTER_LINEAR)
+
+
+    return acc
+
+
+    # raise Exception("TODO 10 in blend.py not implemented")
     # END TODO
 
 
@@ -143,7 +172,7 @@ def getAccSize(ipv):
         
         #do i run through each image and transformation to find the overall min and max values? 
         #guessing once todo 8 is fixed i can then just copy and past code?
-    minX, maxX, minY, maxY = [0]*4
+
     for i in ipv:
         minXtemp, minYtemp, maxXtemp, maxYtemp = imageBoundingBox(i.img,i.position)
         if(minX > minXtemp):
