@@ -30,12 +30,17 @@ def imageBoundingBox(img, M):
     # raise Exception("TODO 8 in blend.py not implemented")
     rows,col,z = np.shape(img)
     transCoords = []
-    transCoords.append(np.matmul(M,np.array([[0],[0],[1]])))    #get the corners post transofrmation and determine the largest x value
-    transCoords.append(np.matmul(M,np.array([[rows-1],[0],[1]])))  
-    transCoords.append(np.matmul(M,np.array([[0],[col-1],[1]])))
-    transCoords.append(np.matmul(M,np.array([[rows-1],[col-1],[1]])))
-    minX, maxX, minY, maxY = [0]*4
+    transCoords.append(np.dot(M,np.array([[0],[0],[1]])))    #get the corners post transofrmation and determine the largest x value
+    transCoords.append(np.dot(M,np.array([[rows-1],[0],[1]])))  
+    transCoords.append(np.dot(M,np.array([[0],[col-1],[1]])))
+    transCoords.append(np.dot(M,np.array([[rows-1],[col-1],[1]])))
+    # maxX, maxY = [0]*2
+    minX = transCoords[0][0] / transCoords[0][2]
+    minY = transCoords[0][1] / transCoords[0][2]
+    maxX = transCoords[1][0] / transCoords[1][2]
+    maxY = transCoords[2][1] / transCoords[2][2]
     for x in transCoords:
+        x = x/x[2]
         if(x[0] < minX):
             minX = x[0]
         if(x[1] < minY):
@@ -72,31 +77,26 @@ def accumulateBlend(img, acc, M, blendWidth):
     #really need a better explanation as to what to do here tbh 
     #acc contains whole image lecture 17 notes 
 
-    # for x in range(acc.size[0]):
-    #     for y in range(acc.size[1]):
-    #         vect = np.matmul(M_t,np.array([[0,0,x],[0,0,y],[0,0,1]]))
-    #         acc[]
-
-    # height, width = acc.shape[:2]
-    # y, x = np.indices((height, width), dtype = np.float64)
-    # linearized = np.array([x.ravel(), y.ravel, np.ones_like(x).ravel()])    #linearized indecies
-
-    # warped_indecies= M.dot(linearized)
-    # xtemp = warped_indecies[0]/warped_indecies[-1]
-    # ytemp = warped_indecies[1]/warped_indecies[-1]
-    # xtemp = xtemp.reshape(height,width).astype(np.float64)
-    # ytemp = ytemp.reshape(height,width).astype(np.float64)
-
-    # dst = cv2.remap(img,xtemp,ytemp,cv2.INTER_LINEAR)
-
+# add 4 channel blend width image 
 
     inverseM = np.linalg.inv(M)
-    for y in acc.size[0]:
-        for x in acc.size[1]:
-            vect = np.matmul(inverseM,np.array([[0,0,y],[0,0,x],[0,0,1]]))
-            ix = vect[2][1]
-            iy = vect[2][0]
-            acc[y,x,:] += cv2.remap(img,ix,iy,cv2.INTER_LINEAR)
+    height = acc.shape[0]
+    width = acc.shape[1]
+    for y in range(0, height):
+        for x in range(0, width):
+            vect = np.dot(inverseM,np.array([x,y,1]))
+            vect = vect / vect[2]
+            iy = int(round(vect[1]))
+            ix = int(round(vect[0]))   #round 
+            if(iy < 0 or ix < 0 or ix >= img.shape[1] or iy >= img.shape[0]):
+                continue
+            else:
+                acc[y,x,:3] += img[iy,ix,:]
+                acc[y,x,3] += 1
+                acc[y,x,:3] += cv2.remap(img,np.array([ix]).astype(np.float32),np.array([iy]).astype(np.float32),cv2.INTER_LINEAR)[0][0]
+                # blend width hat function?
+                # weight on pixel to ramp on blendwith pixels to 1 then ramps back down.
+                # apply weight in input image 
 
 
     return acc
@@ -115,9 +115,10 @@ def normalizeBlend(acc):
          img: image with r,g,b values of acc normalized
     """
     # BEGIN TODO 11: fill in this routine
-    img = []
-    for i in range(acc.size[0]):
-        for j in range(acc.size[1]):
+    
+    img = np.zeros(acc.shape)
+    for i in range(acc.shape[0]):
+        for j in range(acc.shape[1]):
             for k in range(3):
                 alphaChan = acc[i,j,3]
                 if(alphaChan != 0):
@@ -172,17 +173,19 @@ def getAccSize(ipv):
         
         #do i run through each image and transformation to find the overall min and max values? 
         #guessing once todo 8 is fixed i can then just copy and past code?
-
+    minX, minY, maxX, maxY = imageBoundingBox(i.img,i.position)
     for i in ipv:
         minXtemp, minYtemp, maxXtemp, maxYtemp = imageBoundingBox(i.img,i.position)
         if(minX > minXtemp):
             minX = minXtemp
-        if(minY >minYtemp):
+        if(minY > minYtemp):
             minY = minYtemp
         if(maxX < maxXtemp):
             maxX = maxXtemp
         if(maxY < maxYtemp):
             maxY = maxYtemp
+
+
 
 
         # raise Exception("TODO 9 in blend.py not implemented")

@@ -174,8 +174,13 @@ def getInliers(f1, f2, matches, M, RANSACthresh):
         pt1 = np.array([[f1[matches[i].queryIdx].pt[0]] , [f1[matches[i].queryIdx].pt[1]] ,[1]])
         pt2 = np.array([[f2[matches[i].trainIdx].pt[0]] , [f2[matches[i].trainIdx].pt[1]] ,[1]])
         #add in division by w
-        dist = np.linalg.norm(np.subtract(np.matmul(M,pt1) ,pt2))
-        if(np.linalg.norm(np.subtract(np.matmul(M,pt1) ,pt2)) < RANSACthresh):
+
+
+        vect = np.dot(M,pt1)
+        vect = vect / vect[2]
+        dist = np.linalg.norm(np.subtract(vect ,pt2))
+
+        if(np.linalg.norm(np.subtract(vect ,pt2)) < RANSACthresh):
             inlier_indices.append(i)   #should i  be appending the x,y values to inlier indices? 
 
 # still recieving erros not sure where my math is wrong on this one 
