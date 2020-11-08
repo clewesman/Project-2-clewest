@@ -78,28 +78,36 @@ def accumulateBlend(img, acc, M, blendWidth):
     #acc contains whole image lecture 17 notes 
 
 # add 4 channel blend width image 
+    img = np.concatenate((img, np.ones((img.shape[0], img.shape[1], 1))), axis=2)   #adds the weight channel
+    for x in range(0,img.shape[1]): #loops through the width
+        if(x <= blendWidth): # checks if within lowered weight area
+            z = 1/blendWidth * x #computes new weight
+            img[:,x,:] = img[:,x,:] * z #adds new weight 
+        elif(x >= img.shape[1]-blendWidth):
+            z = 1/blendWidth * (img.shape[1]-x)
+            img[:,x,:] = img[:,x,:] * z
+            # img[:,x,3] = z #adds new weight
+        
 
-    inverseM = np.linalg.inv(M)
+    inverseM = np.linalg.inv(M) #inverses m 
     height = acc.shape[0]
     width = acc.shape[1]
     for y in range(0, height):
         for x in range(0, width):
-            vect = np.dot(inverseM,np.array([x,y,1]))
+            vect = np.dot(inverseM,np.array([x,y,1])) 
             vect = vect / vect[2]
             iy = int(round(vect[1]))
             ix = int(round(vect[0]))   #round 
             if(iy < 0 or ix < 0 or ix >= img.shape[1] or iy >= img.shape[0]):
                 continue
             else:
-                acc[y,x,:3] += img[iy,ix,:]
-                acc[y,x,3] += 1
-                acc[y,x,:3] += cv2.remap(img,np.array([ix]).astype(np.float32),np.array([iy]).astype(np.float32),cv2.INTER_LINEAR)[0][0]
-                # blend width hat function?
-                # weight on pixel to ramp on blendwith pixels to 1 then ramps back down.
-                # apply weight in input image 
+                acc[y,x,:] += img[iy,ix,:]
+                # acc[y,x,3] += 1
+                acc[y,x,:] += cv2.remap(img,np.array([ix]).astype(np.float32),np.array([iy]).astype(np.float32),cv2.INTER_LINEAR)[0][0] #performs warping
+                
 
 
-    return acc
+    # return acc
 
 
     # raise Exception("TODO 10 in blend.py not implemented")
@@ -119,11 +127,11 @@ def normalizeBlend(acc):
     img = np.zeros(acc.shape)
     for i in range(acc.shape[0]):
         for j in range(acc.shape[1]):
-            for k in range(3):
-                alphaChan = acc[i,j,3]
-                if(alphaChan != 0):
-                    img[i,j,k] = acc[i,j,k]/alphaChan
-            acc[i,j,3] = 1
+            alphaChan = acc[i,j,3]
+            if(alphaChan != 0):
+                img[i,j,:] = acc[i,j,:]/alphaChan
+            # else:
+            #     acc[i,j,3] = 1
                     #not sure the structure of hte pixels haha need to write that down so i divide properly 
 
     # raise Exception("TODO 11 in blend.py not implemented")
